@@ -1,0 +1,108 @@
+// Clash – geospatial social platform
+// Prisma schema is the canonical definition of the domain model.
+// SQLite has no native enums or scalar lists; status/type fields use String.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// A registered user.
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  bio          String?
+  /// Base64 data URL of an uploaded avatar; null => render initials.
+  avatar       String?
+  createdAt    DateTime @default(now())
+
+  venues             Venue[]
+  clashes            Clash[]
+  participations     Participation[]
+  notifications      Notification[]  @relation("NotificationRecipient")
+  actedNotifications Notification[]  @relation("NotificationActor")
+
+  @@index([name])
+}
+
+/// A physical place that may host multiple clashes.
+model Venue {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  latitude    Float
+  longitude   Float
+  creatorId   String
+  createdAt   DateTime @default(now())
+
+  creator User    @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  clashes Clash[]
+
+  @@index([creatorId])
+  @@index([title])
+}
+
+/// An activity taking place at a location and time.
+model Clash {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  dateTime    DateTime
+  latitude    Float
+  longitude   Float
+  venueId     String?
+  creatorId   String
+  createdAt   DateTime @default(now())
+
+  creator        User            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  venue          Venue?          @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  participations Participation[]
+
+  @@index([creatorId])
+  @@index([venueId])
+  @@index([dateTime])
+  @@index([title])
+}
+
+/// A user's intention to attend a clash.
+/// status: "pending" | "accepted" | "rejected"
+model Participation {
+  id        String   @id @default(cuid())
+  clashId   String
+  userId    String
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+
+  clash Clash @relation(fields: [clashId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clashId, userId])
+  @@index([userId])
+  @@index([clashId])
+}
+
+/// In-app notification for a user.
+/// type: "join" | "accepted" | "rejected" | "venue_clash"
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  message   String
+  read      Boolean  @default(false)
+  clashId   String?
+  venueId   String?
+  actorId   String?
+  createdAt DateTime @default(now())
+
+  user  User  @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([read])
+}
