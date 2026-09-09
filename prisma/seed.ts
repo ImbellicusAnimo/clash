@@ -111,8 +111,34 @@ const venues = [
   },
 ];
 
-// title -> venue title; offsets in days/hours from now
+// title -> venue title; offsets in days/hours from now.
+// A few entries use a negative inDays on purpose, so seed data always has a
+// mix of past and upcoming clashes and both UI states render out of the box.
 const clashes = [
+  {
+    title: "Open Source Hacknight",
+    description:
+      "Casual evening of contributing to open-source together. All experience levels welcome.",
+    venue: "Holzmarkt 25",
+    inDays: -18,
+    hour: 18,
+  },
+  {
+    title: "Berlin Data Science Clash",
+    description:
+      "Talks and discussions on data science, ML pipelines, and analytics in production.",
+    venue: "Silent Green",
+    inDays: -9,
+    hour: 19,
+  },
+  {
+    title: "Summer Picnic at Tempelhofer Feld",
+    description:
+      "A relaxed community picnic on the field, with snacks, frisbees, and good vibes.",
+    venue: "Tempelhofer Feld",
+    inDays: -3,
+    hour: 14,
+  },
   {
     title: "React Berlin Clash",
     description:
@@ -127,14 +153,6 @@ const clashes = [
       "Hands-on sessions for people building with LLMs and agents. Bring your projects and questions.",
     venue: "MotionLab Berlin",
     inDays: 5,
-    hour: 18,
-  },
-  {
-    title: "Open Source Hacknight",
-    description:
-      "Casual evening of contributing to open-source together. All experience levels welcome.",
-    venue: "Holzmarkt 25",
-    inDays: 7,
     hour: 18,
   },
   {
@@ -154,14 +172,6 @@ const clashes = [
     hour: 18,
   },
   {
-    title: "Berlin Data Science Clash",
-    description:
-      "Talks and discussions on data science, ML pipelines, and analytics in production.",
-    venue: "Silent Green",
-    inDays: 14,
-    hour: 19,
-  },
-  {
     title: "Geospatial Community Clash",
     description:
       "For everyone working with maps, GIS, and location data. OpenStreetMap, PostGIS, and beyond.",
@@ -170,12 +180,12 @@ const clashes = [
     hour: 18,
   },
   {
-    title: "Summer Picnic at Tempelhofer Feld",
+    title: "Urban Spree Sessions",
     description:
-      "A relaxed community picnic on the field. Bring snacks, frisbees, and good vibes.",
-    venue: "Tempelhofer Feld",
-    inDays: 20,
-    hour: 14,
+      "An evening of casual demos and lightning talks from the local dev scene, hosted at Urban Spree.",
+    venue: "Urban Spree",
+    inDays: 21,
+    hour: 20,
   },
 ];
 
@@ -254,12 +264,15 @@ async function main() {
   const statuses = ["accepted", "pending", "rejected"] as const;
   for (let i = 0; i < createdClashes.length; i++) {
     const clash = createdClashes[i];
+    const isPast = clash.dateTime < new Date();
     // Pick several users who are not the creator.
     const attendees = createdUsers.filter((u) => u.id !== clash.creatorId);
     // Rotate the starting index so each clash has a different mix.
     for (let j = 0; j < 4; j++) {
       const user = attendees[(i + j) % attendees.length];
-      const status = statuses[j % statuses.length];
+      const rawStatus = statuses[j % statuses.length];
+      // A finished clash shouldn't still have pending join requests.
+      const status = isPast && rawStatus === "pending" ? "accepted" : rawStatus;
       await prisma.participation.upsert({
         where: { clashId_userId: { clashId: clash.id, userId: user.id } },
         update: { status },
@@ -269,7 +282,10 @@ async function main() {
   }
 
   console.log("Creating notifications…");
-  const firstClash = createdClashes[0];
+  // Anchor the seeded notifications to an upcoming clash so they read
+  // sensibly (a finished clash shouldn't have a pending join request).
+  const firstClash =
+    createdClashes.find((c) => c.dateTime > new Date()) ?? createdClashes[0];
   const someUser = userByEmail["anna.schmidt@example.com"];
   const otherUser = userByEmail["lukas.mueller@example.com"];
   await prisma.notification.createMany({
