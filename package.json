@@ -14,8 +14,8 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/adapter-better-sqlite3": "^7.8.0",
-    "@prisma/client": "^7.8.0",
+    "@prisma/adapter-better-sqlite3": "7.9.0",
+    "@prisma/client": "7.9.0",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.11.1",
     "class-variance-authority": "^0.7.1",
@@ -47,7 +47,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
-    "prisma": "^7.8.0",
+    "prisma": "7.9.0",
     "tailwindcss": "^4",
     "tsx": "^4.22.4",
     "typescript": "^5"
