@@ -6,6 +6,14 @@ import { SignupFormSchema, LoginFormSchema, FormState } from "@/lib/definitions"
 import { prisma } from "@/lib/prisma";
 import { createSession, deleteSession } from "@/lib/session";
 
+// Precomputed bcrypt hash with no matching plaintext, used to keep login
+// timing constant whether or not the username exists — otherwise a missing
+// user (fast path, no bcrypt.compare) vs. a wrong password (slow path,
+// bcrypt.compare) would be distinguishable by response time, leaking which
+// usernames are registered.
+const DUMMY_PASSWORD_HASH =
+  "$2b$10$4wmJ7o5HbJ6rYkN/NzrK3e2bRd7aI0DNCu6Z9HX9A2zU/tcVbo68S";
+
 export async function signup(
   state: FormState,
   formData: FormData
@@ -62,12 +70,15 @@ export async function login(
   const { username, password } = validatedFields.data;
 
   const user = await prisma.user.findUnique({ where: { username } });
-  if (!user) {
-    return { message: "Invalid username or password." };
-  }
 
-  const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
-  if (!passwordsMatch) {
+  // Always run bcrypt.compare, even when no user was found, so a missing
+  // username and a wrong password take the same amount of time.
+  const passwordsMatch = await bcrypt.compare(
+    password,
+    user?.passwordHash ?? DUMMY_PASSWORD_HASH
+  );
+
+  if (!user || !passwordsMatch) {
     return { message: "Invalid username or password." };
   }
 
