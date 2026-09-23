@@ -1,6 +1,7 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
+import "./leaflet-overrides.css";
 import L from "leaflet";
 import { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";

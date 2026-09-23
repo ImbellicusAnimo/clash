@@ -1,0 +1,22 @@
+/* Leaflet's default z-index values (panes: 400-650, controls: 1000) sit
+   above shadcn/Radix portal content (Select/Popover/Dialog use Tailwind's
+   z-50, i.e. z-index: 50), so an open dropdown gets visually covered by the
+   map's tile layer and zoom controls. Cap everything Leaflet renders well
+   below that so it only ever stacks within its own container. */
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-marker-pane,
+.leaflet-tooltip-pane,
+.leaflet-popup-pane {
+  z-index: 10 !important;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 20 !important;
+}
