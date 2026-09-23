@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// SQLite has no native enum support in Prisma — status/type fields below are
+// plain Strings; allowed values are documented in comments and enforced at
+// the application layer.
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  venues         Venue[]         @relation("VenueOwner")
+  hostedClashes  Clash[]         @relation("ClashHost")
+  participations Participation[]
+  notifications  Notification[]
+}
+
+model Venue {
+  id        String   @id @default(cuid())
+  name      String
+  city      String
+  address   String?
+  lat       Float
+  lng       Float
+  ownerId   String
+  owner     User     @relation("VenueOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  clashes   Clash[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([city])
+  @@index([ownerId])
+}
+
+model Clash {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  // Location is always stored directly on the Clash, even when linked to a
+  // Venue (copied from the Venue at creation time), so map queries never
+  // need to join Venue.
+  lat         Float
+  lng         Float
+  startAt     DateTime
+  endAt       DateTime?
+  venueId     String?
+  venue       Venue?    @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  hostId      String
+  host        User      @relation("ClashHost", fields: [hostId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  participations Participation[]
+  notifications  Notification[]  @relation("ClashNotifications")
+
+  @@index([startAt])
+  @@index([venueId])
+  @@index([hostId])
+}
+
+model Participation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clashId   String
+  clash     Clash    @relation(fields: [clashId], references: [id], onDelete: Cascade)
+  // One of: pending | accepted | rejected | left
+  // Re-join after rejected/left resets this same row back to pending
+  // (never a new row — enforced by the unique constraint below).
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // A user can only have one participation record per clash — no duplicate
+  // join requests.
+  @@unique([userId, clashId])
+  @@index([clashId, status])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // One of: join_request | join_accepted | join_rejected | new_clash_at_venue
+  type      String
+  isRead    Boolean  @default(false)
+  clashId   String?
+  clash     Clash?   @relation("ClashNotifications", fields: [clashId], references: [id], onDelete: Cascade)
+  venueId   String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+}
