@@ -14,6 +14,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { LocationPicker } from "@/components/map";
 
 type ClashFormAction = (state: ClashFormState, formData: FormData) => Promise<ClashFormState>;
 
@@ -124,6 +125,20 @@ export function ClashForm({
         {state?.errors?.venueId && (
           <p className="text-sm text-destructive">{state.errors.venueId[0]}</p>
         )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label>Location {venueId !== "none" && "(from selected venue)"}</Label>
+        <LocationPicker
+          lat={lat ? Number(lat) : null}
+          lng={lng ? Number(lng) : null}
+          onChange={(nextLat, nextLng) => {
+            setLat(String(nextLat));
+            setLng(String(nextLng));
+          }}
+          readOnly={venueId !== "none"}
+          className="h-64 w-full rounded-md"
+        />
       </div>
 
       <div className="flex gap-4">

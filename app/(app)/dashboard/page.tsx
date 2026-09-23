@@ -1,7 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { getMapMarkers } from "@/lib/dal";
+import { EntityMap } from "@/components/map";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const markers = await getMapMarkers();
+
   return (
     <div className="space-y-6">
       <div>
@@ -13,9 +17,11 @@ export default function DashboardPage() {
       <Separator />
       <Card>
         <CardHeader>
-          <CardTitle>Starter card</CardTitle>
+          <CardTitle>Discover</CardTitle>
         </CardHeader>
-        <CardContent>Build your app UI here.</CardContent>
+        <CardContent>
+          <EntityMap markers={markers} className="h-96 w-full rounded-md" />
+        </CardContent>
       </Card>
     </div>
   );

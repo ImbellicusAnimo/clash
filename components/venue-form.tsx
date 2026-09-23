@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { VenueFormState } from "@/lib/definitions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { LocationPicker } from "@/components/map";
 
 type VenueFormAction = (state: VenueFormState, formData: FormData) => Promise<VenueFormState>;
 
@@ -24,6 +25,12 @@ export function VenueForm({
   submitLabel?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, undefined);
+  const [lat, setLat] = useState<string>(
+    defaultValues ? String(defaultValues.lat) : ""
+  );
+  const [lng, setLng] = useState<string>(
+    defaultValues ? String(defaultValues.lng) : ""
+  );
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -51,6 +58,19 @@ export function VenueForm({
         )}
       </div>
 
+      <div className="flex flex-col gap-2">
+        <Label>Location</Label>
+        <LocationPicker
+          lat={lat ? Number(lat) : null}
+          lng={lng ? Number(lng) : null}
+          onChange={(nextLat, nextLng) => {
+            setLat(String(nextLat));
+            setLng(String(nextLng));
+          }}
+          className="h-64 w-full rounded-md"
+        />
+      </div>
+
       <div className="flex gap-4">
         <div className="flex flex-1 flex-col gap-2">
           <Label htmlFor="lat">Latitude</Label>
@@ -59,7 +79,8 @@ export function VenueForm({
             name="lat"
             type="number"
             step="any"
-            defaultValue={defaultValues?.lat}
+            value={lat}
+            onChange={(e) => setLat(e.target.value)}
             required
           />
           {state?.errors?.lat && (
@@ -73,7 +94,8 @@ export function VenueForm({
             name="lng"
             type="number"
             step="any"
-            defaultValue={defaultValues?.lng}
+            value={lng}
+            onChange={(e) => setLng(e.target.value)}
             required
           />
           {state?.errors?.lng && (

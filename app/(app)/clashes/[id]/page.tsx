@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { EntityMap } from "@/components/map";
 
 export default async function ClashDetailPage({
   params,
@@ -62,6 +63,20 @@ export default async function ClashDetailPage({
               lat {clash.lat}, lng {clash.lng}
             </p>
           )}
+        </CardContent>
+        <CardContent>
+          <EntityMap
+            markers={[
+              {
+                id: clash.id,
+                kind: "clash",
+                label: clash.title,
+                lat: clash.lat,
+                lng: clash.lng,
+              },
+            ]}
+            className="h-64 w-full rounded-md"
+          />
         </CardContent>
       </Card>
 

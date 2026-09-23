@@ -229,3 +229,29 @@ export const getVenue = cache(async (id: string): Promise<VenueDetail | null> =>
     },
   });
 });
+
+export type MapMarker = {
+  id: string;
+  kind: "venue" | "clash";
+  label: string;
+  lat: number;
+  lng: number;
+};
+
+/** All Venues + upcoming Clashes, as plain serializable markers for the map. */
+export const getMapMarkers = cache(async (): Promise<MapMarker[]> => {
+  const [venues, clashes] = await Promise.all([
+    prisma.venue.findMany({
+      select: { id: true, name: true, lat: true, lng: true },
+    }),
+    prisma.clash.findMany({
+      where: { startAt: { gte: new Date() } },
+      select: { id: true, title: true, lat: true, lng: true },
+    }),
+  ]);
+
+  return [
+    ...venues.map((v) => ({ id: v.id, kind: "venue" as const, label: v.name, lat: v.lat, lng: v.lng })),
+    ...clashes.map((c) => ({ id: c.id, kind: "clash" as const, label: c.title, lat: c.lat, lng: c.lng })),
+  ];
+});

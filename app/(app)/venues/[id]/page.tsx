@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { EntityMap } from "@/components/map";
 
 export default async function VenueDetailPage({
   params,
@@ -50,6 +51,14 @@ export default async function VenueDetailPage({
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
           lat {venue.lat}, lng {venue.lng}
+        </CardContent>
+        <CardContent>
+          <EntityMap
+            markers={[
+              { id: venue.id, kind: "venue", label: venue.name, lat: venue.lat, lng: venue.lng },
+            ]}
+            className="h-64 w-full rounded-md"
+          />
         </CardContent>
       </Card>
 
