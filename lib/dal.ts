@@ -152,9 +152,80 @@ export const getClash = cache(async (id: string): Promise<ClashDetail | null> =>
 
 export type VenueOption = { id: string; name: string; city: string; lat: number; lng: number };
 
-export const getVenues = cache(async (): Promise<VenueOption[]> => {
+/** Simple, unfiltered picker list — used by the Clash form's Venue select. */
+export const getVenueOptions = cache(async (): Promise<VenueOption[]> => {
   return prisma.venue.findMany({
     orderBy: { name: "asc" },
     select: { id: true, name: true, city: true, lat: true, lng: true },
+  });
+});
+
+export type VenueSortField = "name" | "city" | "clashesCount";
+export type VenueSortDir = "asc" | "desc";
+
+export type VenueListItem = {
+  id: string;
+  name: string;
+  city: string;
+  address: string | null;
+  clashesCount: number;
+};
+
+export const getVenues = cache(
+  async (options: {
+    search?: string;
+    sortBy?: VenueSortField;
+    sortDir?: VenueSortDir;
+  }): Promise<VenueListItem[]> => {
+    const { search, sortBy = "name", sortDir = "asc" } = options;
+
+    const where: Prisma.VenueWhereInput = search ? { name: { contains: search } } : {};
+
+    // Unlike Clash's "requests" sort, this relation count has no `where`
+    // filter, so Prisma's native `orderBy: { clashes: { _count } }` works
+    // directly — no in-memory re-sort needed here.
+    const orderBy: Prisma.VenueOrderByWithRelationInput =
+      sortBy === "city"
+        ? { city: sortDir }
+        : sortBy === "clashesCount"
+          ? { clashes: { _count: sortDir } }
+          : { name: sortDir };
+
+    const venues = await prisma.venue.findMany({
+      where,
+      orderBy,
+      include: { _count: { select: { clashes: true } } },
+    });
+
+    return venues.map((v) => ({
+      id: v.id,
+      name: v.name,
+      city: v.city,
+      address: v.address,
+      clashesCount: v._count.clashes,
+    }));
+  }
+);
+
+export type VenueDetail = Prisma.VenueGetPayload<{
+  include: {
+    owner: { select: { id: true; name: true; username: true } };
+    clashes: {
+      select: { id: true; title: true; startAt: true };
+      orderBy: { startAt: "desc" };
+    };
+  };
+}>;
+
+export const getVenue = cache(async (id: string): Promise<VenueDetail | null> => {
+  return prisma.venue.findUnique({
+    where: { id },
+    include: {
+      owner: { select: { id: true, name: true, username: true } },
+      clashes: {
+        select: { id: true, title: true, startAt: true },
+        orderBy: { startAt: "desc" },
+      },
+    },
   });
 });

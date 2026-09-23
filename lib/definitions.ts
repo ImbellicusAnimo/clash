@@ -88,3 +88,43 @@ export type ClashFormState =
       message?: string;
     }
   | undefined;
+
+export const VenueFormSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: "Name is required." })
+    .max(120, { message: "Name must be at most 120 characters long." }),
+  city: z
+    .string()
+    .trim()
+    .min(1, { message: "City is required." })
+    .max(100, { message: "City must be at most 100 characters long." }),
+  address: z
+    .string()
+    .trim()
+    .max(200, { message: "Address must be at most 200 characters long." })
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  lat: z.coerce
+    .number({ message: "Latitude must be a number." })
+    .min(-90, { message: "Latitude must be between -90 and 90." })
+    .max(90, { message: "Latitude must be between -90 and 90." }),
+  lng: z.coerce
+    .number({ message: "Longitude must be a number." })
+    .min(-180, { message: "Longitude must be between -180 and 180." })
+    .max(180, { message: "Longitude must be between -180 and 180." }),
+});
+
+export type VenueFormState =
+  | {
+      errors?: {
+        name?: string[];
+        city?: string[];
+        address?: string[];
+        lat?: string[];
+        lng?: string[];
+      };
+      message?: string;
+    }
+  | undefined;

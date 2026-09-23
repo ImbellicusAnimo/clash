@@ -7,6 +7,7 @@ import { logout } from "@/app/actions/auth";
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/clashes", label: "Clashes" },
+  { href: "/venues", label: "Venues" },
 ];
 
 export default async function AppLayout({

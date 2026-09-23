@@ -1,10 +1,10 @@
-import { getVenues } from "@/lib/dal";
+import { getVenueOptions } from "@/lib/dal";
 import { createClash } from "@/app/actions/clash";
 import { ClashForm } from "@/components/clash-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function NewClashPage() {
-  const venues = await getVenues();
+  const venues = await getVenueOptions();
   return (
     <Card>
       <CardHeader>
