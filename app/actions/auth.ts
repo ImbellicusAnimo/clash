@@ -45,7 +45,9 @@ export async function signup(
       "code" in error &&
       (error as { code?: string }).code === "P2002"
     ) {
-      return { message: "This username is already taken." };
+      // Deliberately generic: confirming "this username is taken" turns
+      // registration into an oracle for enumerating existing usernames.
+      return { message: "Registration failed. Please try a different username." };
     }
     throw error;
   }
