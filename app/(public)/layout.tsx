@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import AuthNav from "./_components/auth-nav";
 
 export default function PublicLayout({
   children,
@@ -14,7 +16,9 @@ export default function PublicLayout({
           </Link>
           <nav className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link href="/">Home</Link>
-            <Link href="/dashboard">App</Link>
+            <Suspense fallback={null}>
+              <AuthNav />
+            </Suspense>
           </nav>
         </div>
       </header>

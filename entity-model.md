@@ -16,7 +16,8 @@ erDiagram
 
     USER {
         string id PK
-        string email UK
+        string username UK
+        string email UK "optional"
         string passwordHash
         string name
         string avatarUrl "optional"

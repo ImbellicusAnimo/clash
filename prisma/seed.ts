@@ -29,20 +29,20 @@ async function main() {
 
   console.log("Creating users...");
   const userSeeds = [
-    { key: "alice", email: "alice@clash.app", name: "Alice Author" },
-    { key: "ben", email: "ben@clash.app", name: "Ben Baker" },
-    { key: "carla", email: "carla@clash.app", name: "Carla Chen" },
-    { key: "dennis", email: "dennis@clash.app", name: "Dennis Duarte" },
-    { key: "elena", email: "elena@clash.app", name: "Elena Fischer" },
-    { key: "felix", email: "felix@clash.app", name: "Felix Gruber" },
-    { key: "greta", email: "greta@clash.app", name: "Greta Hoffmann" },
-    { key: "hannah", email: "hannah@clash.app", name: "Hannah Imhof" },
+    { key: "alice", username: "alice", email: "alice@clash.app", name: "Alice Author" },
+    { key: "ben", username: "ben", email: "ben@clash.app", name: "Ben Baker" },
+    { key: "carla", username: "carla", email: "carla@clash.app", name: "Carla Chen" },
+    { key: "dennis", username: "dennis", email: "dennis@clash.app", name: "Dennis Duarte" },
+    { key: "elena", username: "elena", email: "elena@clash.app", name: "Elena Fischer" },
+    { key: "felix", username: "felix", email: "felix@clash.app", name: "Felix Gruber" },
+    { key: "greta", username: "greta", email: "greta@clash.app", name: "Greta Hoffmann" },
+    { key: "hannah", username: "hannah", email: "hannah@clash.app", name: "Hannah Imhof" },
   ];
 
   const users: Record<string, Awaited<ReturnType<typeof prisma.user.create>>> = {};
   for (const u of userSeeds) {
     users[u.key] = await prisma.user.create({
-      data: { email: u.email, name: u.name, passwordHash },
+      data: { username: u.username, email: u.email, name: u.name, passwordHash },
     });
   }
 
@@ -221,7 +221,9 @@ async function main() {
   console.log(
     `Seed complete: ${userSeeds.length} users, ${venueSeeds.length} venues, ${clashSeeds.length} clashes, ${participationSeeds.length} participations, ${notificationCount} notifications.`
   );
-  console.log("All sample users share the password: password123");
+  console.log(
+    "Log in with any username above (e.g. alice) and password: password123"
+  );
 }
 
 main()
