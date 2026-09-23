@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { getUser } from "@/lib/dal";
 import { logout } from "@/app/actions/auth";
 
-const navItems = [{ href: "/dashboard", label: "Dashboard" }];
+const navItems = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/clashes", label: "Clashes" },
+];
 
 export default async function AppLayout({
   children,

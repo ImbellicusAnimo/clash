@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { decrypt } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/lib/generated/prisma/client";
 
 export const verifySession = cache(async () => {
   const cookieStore = await cookies();
@@ -36,4 +37,124 @@ export const getUser = cache(async () => {
   }
 
   return user;
+});
+
+export type ClashListFilter = "upcoming" | "past" | "all";
+export type ClashSortField = "title" | "startAt" | "venue" | "host" | "requests";
+export type ClashSortDir = "asc" | "desc";
+
+const ACTIVE_PARTICIPATION_STATUSES = ["pending", "accepted"] as const;
+
+export type ClashListItem = {
+  id: string;
+  title: string;
+  startAt: Date;
+  endAt: Date | null;
+  venue: { id: string; name: string } | null;
+  host: { id: string; name: string; username: string };
+  requestsCount: number;
+};
+
+export const getClashes = cache(
+  async (options: {
+    search?: string;
+    filter?: ClashListFilter;
+    sortBy?: ClashSortField;
+    sortDir?: ClashSortDir;
+  }): Promise<ClashListItem[]> => {
+    const { search, filter = "upcoming", sortBy = "startAt", sortDir = "asc" } = options;
+    const now = new Date();
+
+    const where: Prisma.ClashWhereInput = {
+      ...(search ? { title: { contains: search } } : {}),
+      ...(filter === "upcoming" ? { startAt: { gte: now } } : {}),
+      ...(filter === "past" ? { startAt: { lt: now } } : {}),
+    };
+
+    const orderBy: Prisma.ClashOrderByWithRelationInput =
+      sortBy === "venue"
+        ? { venue: { name: sortDir } }
+        : sortBy === "host"
+          ? { host: { name: sortDir } }
+          : sortBy === "title"
+            ? { title: sortDir }
+            : { startAt: sortDir };
+
+    const clashes = await prisma.clash.findMany({
+      where,
+      orderBy,
+      include: {
+        venue: { select: { id: true, name: true } },
+        host: { select: { id: true, name: true, username: true } },
+        _count: {
+          select: {
+            participations: { where: { status: { in: [...ACTIVE_PARTICIPATION_STATUSES] } } },
+          },
+        },
+      },
+    });
+
+    const items: ClashListItem[] = clashes.map((c) => ({
+      id: c.id,
+      title: c.title,
+      startAt: c.startAt,
+      endAt: c.endAt,
+      venue: c.venue,
+      host: c.host,
+      requestsCount: c._count.participations,
+    }));
+
+    // Prisma can't `orderBy` a filtered relation count, so sort in memory for
+    // this one field. Fine at this dataset size; a paginated/larger list
+    // would need a different approach (e.g. a denormalized counter column).
+    if (sortBy === "requests") {
+      items.sort((a, b) =>
+        sortDir === "asc" ? a.requestsCount - b.requestsCount : b.requestsCount - a.requestsCount
+      );
+    }
+
+    return items;
+  }
+);
+
+export type ClashDetail = Prisma.ClashGetPayload<{
+  include: {
+    venue: { select: { id: true; name: true; city: true; address: true; lat: true; lng: true } };
+    host: { select: { id: true; name: true; username: true; avatarUrl: true } };
+    participations: {
+      where: { status: { in: ["pending", "accepted"] } };
+      select: {
+        id: true;
+        status: true;
+        user: { select: { id: true; name: true; username: true; avatarUrl: true } };
+      };
+    };
+  };
+}>;
+
+export const getClash = cache(async (id: string): Promise<ClashDetail | null> => {
+  return prisma.clash.findUnique({
+    where: { id },
+    include: {
+      venue: { select: { id: true, name: true, city: true, address: true, lat: true, lng: true } },
+      host: { select: { id: true, name: true, username: true, avatarUrl: true } },
+      participations: {
+        where: { status: { in: [...ACTIVE_PARTICIPATION_STATUSES] } },
+        select: {
+          id: true,
+          status: true,
+          user: { select: { id: true, name: true, username: true, avatarUrl: true } },
+        },
+      },
+    },
+  });
+});
+
+export type VenueOption = { id: string; name: string; city: string; lat: number; lng: number };
+
+export const getVenues = cache(async (): Promise<VenueOption[]> => {
+  return prisma.venue.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, city: true, lat: true, lng: true },
+  });
 });
