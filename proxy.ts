@@ -4,7 +4,7 @@ import { decrypt } from "@/lib/session";
 
 // Add the top-level segment of any new route under app/(app)/ to both
 // arrays below, and to `config.matcher`.
-const protectedRoutes = ["/dashboard", "/clashes", "/venues"];
+const protectedRoutes = ["/dashboard", "/clashes", "/venues", "/participations", "/notifications"];
 const authRoutes = ["/login", "/register"];
 
 export async function proxy(request: NextRequest) {
@@ -30,5 +30,13 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/clashes/:path*", "/venues/:path*", "/login", "/register"],
+  matcher: [
+    "/dashboard/:path*",
+    "/clashes/:path*",
+    "/venues/:path*",
+    "/participations/:path*",
+    "/notifications/:path*",
+    "/login",
+    "/register",
+  ],
 };

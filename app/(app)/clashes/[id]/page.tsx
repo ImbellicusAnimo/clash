@@ -2,11 +2,13 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getClash, getUser } from "@/lib/dal";
 import { deleteClash } from "@/app/actions/clash";
+import { acceptParticipation, rejectParticipation } from "@/app/actions/participation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { EntityMap } from "@/components/map";
+import { ParticipationControls } from "@/components/participation-controls";
 
 export default async function ClashDetailPage({
   params,
@@ -20,6 +22,8 @@ export default async function ClashDetailPage({
   const going = clash.participations.filter((p) => p.status === "accepted");
   const requests = clash.participations.filter((p) => p.status === "pending");
   const isHost = clash.hostId === user.id;
+  const mine = clash.participations.find((p) => p.user.id === user.id);
+  const myStatus = mine?.status === "accepted" ? "accepted" : mine?.status === "pending" ? "pending" : "none";
 
   return (
     <div className="space-y-6">
@@ -43,6 +47,7 @@ export default async function ClashDetailPage({
             </form>
           </div>
         )}
+        {!isHost && <ParticipationControls clashId={clash.id} status={myStatus} />}
       </div>
 
       {clash.description && <p>{clash.description}</p>}
@@ -109,9 +114,25 @@ export default async function ClashDetailPage({
             <div className="mb-2 flex items-center gap-2 text-sm font-medium">
               Requests <Badge variant="secondary">{requests.length}</Badge>
             </div>
-            <ul className="text-sm text-muted-foreground">
+            <ul className="space-y-2 text-sm text-muted-foreground">
               {requests.map((p) => (
-                <li key={p.id}>{p.user.name}</li>
+                <li key={p.id} className="flex items-center justify-between gap-2">
+                  <span>{p.user.name}</span>
+                  {isHost && (
+                    <div className="flex gap-2">
+                      <form action={acceptParticipation.bind(null, p.id)}>
+                        <Button type="submit" size="sm">
+                          Accept
+                        </Button>
+                      </form>
+                      <form action={rejectParticipation.bind(null, p.id)}>
+                        <Button type="submit" size="sm" variant="outline">
+                          Reject
+                        </Button>
+                      </form>
+                    </div>
+                  )}
+                </li>
               ))}
               {requests.length === 0 && <li>No open requests.</li>}
             </ul>

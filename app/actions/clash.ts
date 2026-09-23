@@ -20,15 +20,15 @@ function parseClashForm(formData: FormData) {
 
 /** Resolves the authoritative lat/lng: copied from the Venue when linked, otherwise the submitted values. */
 async function resolveCoordinates(venueId: string | undefined, lat: number, lng: number) {
-  if (!venueId) return { lat, lng, venueId: undefined as string | undefined };
+  if (!venueId) return { lat, lng, venueId: undefined as string | undefined, ownerId: undefined as string | undefined };
   const venue = await prisma.venue.findUnique({
     where: { id: venueId },
-    select: { id: true, lat: true, lng: true },
+    select: { id: true, lat: true, lng: true, ownerId: true },
   });
   if (!venue) {
     return { error: "The selected venue no longer exists." as const };
   }
-  return { lat: venue.lat, lng: venue.lng, venueId: venue.id };
+  return { lat: venue.lat, lng: venue.lng, venueId: venue.id, ownerId: venue.ownerId };
 }
 
 export async function createClash(
@@ -45,18 +45,36 @@ export async function createClash(
   const resolved = await resolveCoordinates(venueId, lat, lng);
   if ("error" in resolved) return { message: resolved.error };
 
-  const clash = await prisma.clash.create({
-    data: {
-      title,
-      description,
-      startAt,
-      endAt,
-      lat: resolved.lat,
-      lng: resolved.lng,
-      venueId: resolved.venueId,
-      hostId: user.id, // host is always the session user, never a form field
-    },
-    select: { id: true },
+  // Interactive transaction: the venue-owner notification (when applicable)
+  // is created atomically with the Clash — never orphaned by a partial write.
+  const clash = await prisma.$transaction(async (tx) => {
+    const created = await tx.clash.create({
+      data: {
+        title,
+        description,
+        startAt,
+        endAt,
+        lat: resolved.lat,
+        lng: resolved.lng,
+        venueId: resolved.venueId,
+        hostId: user.id, // host is always the session user, never a form field
+      },
+      select: { id: true },
+    });
+
+    // Notify the venue's owner, unless they're hosting at their own venue.
+    if (resolved.venueId && resolved.ownerId && resolved.ownerId !== user.id) {
+      await tx.notification.create({
+        data: {
+          userId: resolved.ownerId,
+          type: "new_clash_at_venue",
+          clashId: created.id,
+          venueId: resolved.venueId,
+        },
+      });
+    }
+
+    return created;
   });
 
   revalidatePath("/clashes");

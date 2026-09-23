@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { getUser } from "@/lib/dal";
+import { Badge } from "@/components/ui/badge";
+import { getUser, getUnreadNotificationCount } from "@/lib/dal";
 import { logout } from "@/app/actions/auth";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/clashes", label: "Clashes" },
   { href: "/venues", label: "Venues" },
+  { href: "/participations", label: "Participations" },
+  { href: "/notifications", label: "Notifications" },
 ];
 
 export default async function AppLayout({
@@ -16,6 +19,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await getUser();
+  const unreadCount = await getUnreadNotificationCount(user.id);
 
   return (
     <div className="flex min-h-full flex-1">
@@ -27,9 +31,12 @@ export default async function AppLayout({
             <Link
               key={item.href}
               href={item.href}
-              className="rounded px-2 py-1.5 hover:bg-muted"
+              className="flex items-center justify-between rounded px-2 py-1.5 hover:bg-muted"
             >
               {item.label}
+              {item.href === "/notifications" && unreadCount > 0 && (
+                <Badge variant="secondary">{unreadCount}</Badge>
+              )}
             </Link>
           ))}
         </nav>

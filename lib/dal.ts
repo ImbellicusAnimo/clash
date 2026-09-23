@@ -255,3 +255,76 @@ export const getMapMarkers = cache(async (): Promise<MapMarker[]> => {
     ...clashes.map((c) => ({ id: c.id, kind: "clash" as const, label: c.title, lat: c.lat, lng: c.lng })),
   ];
 });
+
+export type MyParticipationItem = {
+  id: string;
+  status: string;
+  clash: {
+    id: string;
+    title: string;
+    startAt: Date;
+    venue: { name: string; city: string } | null;
+  };
+};
+
+/**
+ * The current user's own Participations, grouped by status. `left` rows are
+ * intentionally excluded — once a user has left a Clash there's nothing
+ * left to show them about it.
+ */
+export const getMyParticipations = cache(
+  async (
+    userId: string
+  ): Promise<{
+    going: MyParticipationItem[];
+    awaiting: MyParticipationItem[];
+    declined: MyParticipationItem[];
+  }> => {
+    const participations = await prisma.participation.findMany({
+      where: { userId, status: { in: ["pending", "accepted", "rejected"] } },
+      include: {
+        clash: {
+          select: {
+            id: true,
+            title: true,
+            startAt: true,
+            venue: { select: { name: true, city: true } },
+          },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    return {
+      going: participations.filter((p) => p.status === "accepted"),
+      awaiting: participations.filter((p) => p.status === "pending"),
+      declined: participations.filter((p) => p.status === "rejected"),
+    };
+  }
+);
+
+export type NotificationItem = {
+  id: string;
+  type: string;
+  isRead: boolean;
+  createdAt: Date;
+  clash: { id: string; title: string; venue: { name: string } | null } | null;
+};
+
+export const getNotifications = cache(async (userId: string): Promise<NotificationItem[]> => {
+  return prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      type: true,
+      isRead: true,
+      createdAt: true,
+      clash: { select: { id: true, title: true, venue: { select: { name: true } } } },
+    },
+  });
+});
+
+export const getUnreadNotificationCount = cache(async (userId: string): Promise<number> => {
+  return prisma.notification.count({ where: { userId, isRead: false } });
+});

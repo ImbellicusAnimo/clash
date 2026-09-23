@@ -128,3 +128,8 @@ export type VenueFormState =
       message?: string;
     }
   | undefined;
+
+// Shared by the Participation and Notification actions — all of them are
+// id-driven button actions with no form fields to validate, just a
+// success/failure message.
+export type SimpleActionState = { message?: string } | undefined;
