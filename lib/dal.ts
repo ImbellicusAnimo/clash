@@ -33,7 +33,9 @@ export const getUser = cache(async () => {
   });
 
   if (!user) {
-    redirect("/login");
+    // Orphaned session (user deleted, e.g. after a reseed): let the route
+    // handler clear the cookie, otherwise /login and /dashboard loop.
+    redirect("/api/session/expired");
   }
 
   return user;
