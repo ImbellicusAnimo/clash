@@ -8,7 +8,7 @@
  "PostToolUse": [{
  "matcher": "Edit|Write",
  "hooks": [{ "type": "command",
- "command": "prettier --write $FILE" }]
+ "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format-with-prettier.sh" }]
  }]
  }
 }
