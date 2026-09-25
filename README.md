@@ -88,6 +88,15 @@ Der Seed legt 8 Nutzer, 5 Venues, Clashes, Teilnahmen und Benachrichtigungen an.
 | `npm run test:e2e` | Baut die App und führt die Playwright-E2E-Tests aus (Port 3100, lokal installiertes Chrome)                           |
 | `npm run verify`   | Gesamtprüfung: `tsc --noEmit`, ESLint, `next build`, `vitest run` und `playwright test`, bricht beim ersten Fehler ab |
 
+### Code-Review mit Claude
+
+`npm run claude:lint` lässt Claude die Änderungen seit dem Abzweigen von `main` prüfen (`git diff <merge-base> | claude -p "list bugs and risks" --output-format json --tools "Read" --strict-mcp-config`) und schreibt die JSON-Antwort nach `review.json` (git-ignoriert, der Text steht im Feld `.result`).
+
+- Braucht die `claude`-CLI und lokal einen Branch `main`. Ein Lauf kostet Tokens und schickt den Diff an die API.
+- Der Diff enthält auch uncommittete Änderungen, aber keine neuen, unversionierten Dateien (vorher `git add -N <datei>`) und nicht `package-lock.json`.
+- Claude darf nur das Tool `Read` benutzen: `--tools "Read"` sperrt die eingebauten Tools, `--strict-mcp-config` die MCP-Server (ohne dieses Flag blieben sie verfügbar). Der Diff bleibt trotzdem unvertrauenswürdige Eingabe, die Antwort also vor dem Umsetzen prüfen.
+- Bei leerem Diff wird nichts geprüft und ein altes `review.json` gelöscht. Schlägt ein Lauf fehl, bleibt das letzte `review.json` erhalten.
+
 ### Prisma (Datenbankverwaltung)
 
 Es gibt keine eigenen npm-Skripte dafür, die Befehle laufen direkt über `npx prisma`. Die Konfiguration steht in `prisma7.config.ts` und wird automatisch geladen (Schema: `prisma/schema.prisma`, Migrationen: `prisma/migrations`, Seed: `prisma/seed.ts`).
