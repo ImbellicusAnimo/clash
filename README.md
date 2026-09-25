@@ -78,12 +78,13 @@ Der Seed legt 8 Nutzer, 5 Venues, Clashes, Teilnahmen und Benachrichtigungen an.
 
 ### App
 
-| Befehl          | Wirkung                                   |
-| --------------- | ----------------------------------------- |
-| `npm run dev`   | Dev-Server mit Turbopack und Hot Reload   |
-| `npm run build` | Produktions-Build                         |
-| `npm run start` | Produktions-Server (nach `npm run build`) |
-| `npm run lint`  | ESLint                                    |
+| Befehl           | Wirkung                                                                                            |
+| ---------------- | -------------------------------------------------------------------------------------------------- |
+| `npm run dev`    | Dev-Server mit Turbopack und Hot Reload                                                            |
+| `npm run build`  | Produktions-Build                                                                                  |
+| `npm run start`  | Produktions-Server (nach `npm run build`)                                                          |
+| `npm run lint`   | ESLint                                                                                             |
+| `npm run verify` | Gesamtprüfung: `tsc --noEmit`, ESLint, `next build` und `vitest run`, bricht beim ersten Fehler ab |
 
 ### Prisma (Datenbankverwaltung)
 
@@ -194,6 +195,7 @@ Stellen, an denen die Umsetzung vom Briefing (`brief.md`) oder von den üblichen
 - **Session-Aufräumen:** Ein Route Handler (`app/api/session/expired`) löscht verwaiste Session-Cookies, weil sich Cookies beim Rendern eines Server Components nicht löschen lassen.
 - **Dev-Origins:** `next.config.ts` erlaubt zusätzlich `127.0.0.1` und `[::1]`. `localhost` ist in Next.js standardmäßig erlaubt.
 - **Seed löscht alles:** `prisma/seed.ts` leert zuerst alle Tabellen, auch selbst angelegte Konten.
+- **Tests:** Vitest ist eingerichtet, es gibt aber noch keine Testdateien. `npm run verify` ruft es deshalb mit `--passWithNoTests` auf. Sobald Tests existieren, den Schalter in `package.json` entfernen, damit fehlende Tests nicht mehr durchrutschen. `@types/node` steht auf `^26`, weil Vitest 5 mindestens Version 22 verlangt und Node 26 gepinnt ist.
 
 ## Fehlersuche
 
